@@ -22,7 +22,7 @@ const sendEmailOTP = async (email: string, otp: string) => {
   });
 
   await transporter.sendMail({
-    from: '"KisanX Support" <verify@kisanx.com>',
+    from: `"KisanX Support" <${process.env.EMAIL_USER}>`,
     to: email,
     subject: "KisanX Email Verification Code",
     text: `Aapka verification code hai: ${otp}. Ye 10 minutes ke liye valid hai.`
@@ -122,7 +122,7 @@ router.post("/forgot-password", async (req: Request, res: Response) => { // Adde
       });
 
       await transporter.sendMail({
-        from: '"KisanX Support" <support@kisanx.com>',
+        from: `"KisanX Support" <${process.env.EMAIL_USER}>`,
         to: contact,
         subject: "Password Reset OTP",
         text: `Your OTP for KisanX password reset is: ${otp}`
