@@ -23,7 +23,77 @@ const sendEmailOTP = async (email: string, otp: string, subject: string) => {
   const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
 
   sendSmtpEmail.subject = subject;
-  sendSmtpEmail.htmlContent = `<html><body><p>Aapka KisanX verification code hai: <strong>${otp}</strong>. Ye 10 minutes ke liye valid hai.</p></body></html>`;
+  sendSmtpEmail.htmlContent = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+      <title>KisanX Verification</title>
+    </head>
+    <body style="margin:0; padding:0; background-color:#f4f6f8; font-family: 'Segoe UI', Arial, sans-serif;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f8; padding: 40px 0;">
+        <tr>
+          <td align="center">
+            <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff; border-radius:12px; overflow:hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+              
+              <!-- Header -->
+              <tr>
+                <td style="background: linear-gradient(135deg, #2e7d32, #66bb6a); padding: 36px 40px; text-align:center;">
+                  <h1 style="margin:0; color:#ffffff; font-size:28px; letter-spacing:1px;">🌾 KisanX</h1>
+                  <p style="margin:6px 0 0; color:#c8e6c9; font-size:14px;">Empowering Farmers, Connecting Markets</p>
+                </td>
+              </tr>
+
+              <!-- Body -->
+              <tr>
+                <td style="padding: 40px 40px 30px;">
+                  <h2 style="margin:0 0 10px; color:#1b5e20; font-size:22px;">Verification Code</h2>
+                  <p style="margin:0 0 24px; color:#555555; font-size:15px; line-height:1.6;">
+                    We received a request to verify your identity. Please use the OTP below to proceed. This code is valid for <strong>10 minutes</strong>.
+                  </p>
+
+                  <!-- OTP Box -->
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td align="center" style="padding: 10px 0 30px;">
+                        <div style="display:inline-block; background-color:#f1f8e9; border: 2px dashed #66bb6a; border-radius:10px; padding: 20px 50px;">
+                          <span style="font-size:38px; font-weight:700; letter-spacing:10px; color:#2e7d32;">${otp}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  </table>
+
+                  <p style="margin:0 0 10px; color:#777777; font-size:13px; line-height:1.6;">
+                    If you did not request this code, please ignore this email or contact our support team immediately. Do not share this OTP with anyone.
+                  </p>
+                </td>
+              </tr>
+
+              <!-- Divider -->
+              <tr>
+                <td style="padding: 0 40px;">
+                  <hr style="border:none; border-top:1px solid #e8f5e9; margin:0;" />
+                </td>
+              </tr>
+
+              <!-- Footer -->
+              <tr>
+                <td style="padding: 24px 40px; text-align:center;">
+                  <p style="margin:0; color:#aaaaaa; font-size:12px;">
+                    © ${new Date().getFullYear()} KisanX. All rights reserved.<br/>
+                    This is an automated email. Please do not reply to this message.
+                  </p>
+                </td>
+              </tr>
+
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
   sendSmtpEmail.sender = { name: "KisanX Support", email: "saniya122400@gmail.com" };
   sendSmtpEmail.to = [{ email: email }];
 
