@@ -6,16 +6,16 @@ import Product from "../models/Product";
 import { protect } from "../middleware/auth.middleware";
 import bcrypt from "bcryptjs"; 
 
-// ✨ TypeScript errors hatane ke liye require use kiya gaya hai
+// ✨ Zero-Error Import: TypeScript errors ko fix karne ke liye require use kiya
 const Brevo = require("@getbrevo/brevo");
 
 const router = Router();
 
-// ✨ Brevo Configuration (Simplified)
+// ✨ Brevo Configuration: stable initialization method
 const apiInstance = new Brevo.TransactionalEmailsApi();
 apiInstance.setApiKey(0, process.env.BREVO_API_KEY || ""); 
 
-// ✨ Temporary storage for registration OTPs
+// Temporary storage for registration OTPs
 const otpStore: { [key: string]: { otp: string, expires: number } } = {};
 
 // 📧 Helper: Send Mail using Brevo
