@@ -1,32 +1,33 @@
-import { Router, Request, Response } from "express"; // Added Request and Response types
+import { Router, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import User from "../models/User";
 import Order from "../models/Order"; 
 import Product from "../models/Product";
 import { protect } from "../middleware/auth.middleware";
-import nodemailer from "nodemailer";
+import { Resend } from "resend"; // Resend import kiya gaya
 import bcrypt from "bcryptjs"; 
 
 const router = Router();
+
+// Resend Configuration (API Key aapke image se li gayi hai)
+const resend = new Resend(process.env.RESEND_API_KEY || "re_EBvBdw1Q_2M98Bcyq3vmzNPJzZkEads93");
+
 // ✨ Temporary storage for registration OTPs
 const otpStore: { [key: string]: { otp: string, expires: number } } = {};
 
-// 📧 Helper: Send Mail
-const sendEmailOTP = async (email: string, otp: string) => {
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: { 
-      user: process.env.EMAIL_USER, // e.g. saniya122400@gmail.com
-      pass: process.env.EMAIL_PASS  // e.g. joan vdzz dhzw lxeg
-    }
-  });
-
-  await transporter.sendMail({
-    from: `"KisanX Support" <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: "KisanX Email Verification Code",
-    text: `Aapka verification code hai: ${otp}. Ye 10 minutes ke liye valid hai.`
-  });
+// 📧 Helper: Send Mail using Resend
+const sendEmailOTP = async (email: string, otp: string, subject: string) => {
+  try {
+    await resend.emails.send({
+      from: 'onboarding@resend.dev', // Aap apna verified domain yahan daal sakte hain
+      to: email,
+      subject: subject,
+      html: `<p>Aapka KisanX verification code hai: <strong>${otp}</strong>. Ye 10 minutes ke liye valid hai.</p>`
+    });
+  } catch (error) {
+    console.error("Resend Error:", error);
+    throw new Error("Email sending failed");
+  }
 };
 
 // 1️⃣ ROUTE: SEND OTP (For Registration)
@@ -41,7 +42,7 @@ router.post("/send-registration-otp", async (req: Request, res: Response) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     otpStore[email.toLowerCase()] = { otp, expires: Date.now() + 600000 };
 
-    await sendEmailOTP(email.toLowerCase(), otp);
+    await sendEmailOTP(email.toLowerCase(), otp, "KisanX Email Verification Code");
     res.json({ message: "OTP sent successfully" });
   } catch (error) {
     console.log("OTP Error:", error);
@@ -67,7 +68,6 @@ router.post("/register", async (req: Request, res: Response) => {
   try {
     const { firstName, lastName, email, password, phone, role, address, farmName, location, isVerified } = req.body;
 
-    // Security: Bina verification ke registration nahi hoga
     if (!isVerified) return res.status(400).json({ message: "Please verify your email first" });
 
     const userExists = await User.findOne({ email: email.toLowerCase() });
@@ -100,8 +100,8 @@ router.post("/login", async (req: Request, res: Response) => {
   }
 });
 
-// FORGOT PASSWORD (Email focus + Simulation for Phone)
-router.post("/forgot-password", async (req: Request, res: Response) => { // Added explicit types
+// FORGOT PASSWORD
+router.post("/forgot-password", async (req: Request, res: Response) => {
   const { contact, method } = req.body; 
   try {
     const user = await User.findOne({ 
@@ -114,22 +114,8 @@ router.post("/forgot-password", async (req: Request, res: Response) => { // Adde
     otpStore[contact] = { otp, expires: Date.now() + 600000 }; 
 
     if (method === "email") {
-      const transporter = nodemailer.createTransport({
-        host: "smtp.gmail.com",
-        port: 587,
-        secure: false,
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS
-        }
-      });
-
-      await transporter.sendMail({
-        from: `"KisanX Support" <${process.env.EMAIL_USER}>`,
-        to: contact,
-        subject: "Password Reset OTP",
-        text: `Your OTP for KisanX password reset is: ${otp}`
-      });
+      // Nodemailer ki jagah Resend helper use kiya
+      await sendEmailOTP(contact, otp, "KisanX Password Reset OTP");
     } else {
       console.log(`[SIMULATION] SMS Sent to ${contact}: Your OTP is ${otp}`);
     }
@@ -141,7 +127,7 @@ router.post("/forgot-password", async (req: Request, res: Response) => { // Adde
 });
 
 // RESET PASSWORD
-router.post("/reset-password", async (req: Request, res: Response) => { // Added explicit types
+router.post("/reset-password", async (req: Request, res: Response) => {
   const { contact, otp, newPassword } = req.body;
   const record = otpStore[contact];
 
@@ -169,13 +155,11 @@ router.post("/reset-password", async (req: Request, res: Response) => { // Added
 router.get("/me", protect, async (req: any, res: Response) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
-    
     if (!user) return res.status(404).json({ message: "User not found" });
 
     let salesOrOrdersCount = 0;
 
     if (user.role === "farmer") {
-      // 🧑‍🌾 Farmer: Sirf Delivered products ka count sales mein aayega
       const farmerProducts = await Product.find({ farmerId: req.user.id });
       const productIds = farmerProducts.map(p => p._id);
       
@@ -184,14 +168,12 @@ router.get("/me", protect, async (req: any, res: Response) => {
         orderStatus: "Delivered" 
       });
     } else {
-      // 🛒 Customer: Unke total orders (except cancelled)
       salesOrOrdersCount = await Order.countDocuments({ 
         userId: req.user.id, 
         orderStatus: { $ne: "Cancelled" } 
       });
     }
 
-    // Points aur count ke saath response bhejein
     res.json({ 
       ...user.toObject(), 
       orderCount: salesOrOrdersCount, 
@@ -202,7 +184,7 @@ router.get("/me", protect, async (req: any, res: Response) => {
   }
 });
 
-router.put("/update", protect, async (req: any, res: Response) => { // Added explicit types
+router.put("/update", protect, async (req: any, res: Response) => {
   try {
     const updatedUser = await User.findByIdAndUpdate(req.user.id, req.body, { new: true }).select("-password");
     res.json({ message: "Success", user: updatedUser });
@@ -211,11 +193,10 @@ router.put("/update", protect, async (req: any, res: Response) => { // Added exp
   }
 });
 
-// ✨ NEW: DELETE USER ROUTE
+// DELETE USER ROUTE
 router.delete("/delete-user/:id", protect, async (req: any, res: Response) => {
   try {
     const userIdToDelete = req.params.id;
-    // Simple security: Ensure user can only delete themselves
     if (req.user.id !== userIdToDelete) {
       return res.status(403).json({ message: "Access denied. You can only delete your own account." });
     }
