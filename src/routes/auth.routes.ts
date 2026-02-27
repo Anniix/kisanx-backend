@@ -6,15 +6,14 @@ import Product from "../models/Product";
 import { protect } from "../middleware/auth.middleware";
 import bcrypt from "bcryptjs"; 
 
-// ✨ TypeScript aur Render ke errors hatane ke liye require use kiya gaya hai
-const SibApiV3Sdk = require('@getbrevo/brevo');
+// ✅ Brevo (sib-api-v3-sdk) import
+const SibApiV3Sdk = require('sib-api-v3-sdk');
+const defaultClient = SibApiV3Sdk.ApiClient.instance;
+const apiKeyAuth = defaultClient.authentications['api-key'];
+apiKeyAuth.apiKey = process.env.BREVO_API_KEY || "";
+const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
 
 const router = Router();
-
-// ✨ Brevo Configuration (New Stable Method)
-let apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
-let apiKey = SibApiV3Sdk.ApiClient.instance.authentications['api-key'];
-apiKey.apiKey = process.env.BREVO_API_KEY || ""; 
 
 // Temporary storage for registration OTPs
 const otpStore: { [key: string]: { otp: string, expires: number } } = {};
