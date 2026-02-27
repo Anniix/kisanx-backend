@@ -44,6 +44,7 @@ router.post("/send-registration-otp", async (req: Request, res: Response) => {
     await sendEmailOTP(email.toLowerCase(), otp);
     res.json({ message: "OTP sent successfully" });
   } catch (error) {
+    console.log("OTP Error:", error);
     res.status(500).json({ message: "Failed to send OTP" });
   }
 });
