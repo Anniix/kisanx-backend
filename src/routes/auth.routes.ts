@@ -6,26 +6,27 @@ import Product from "../models/Product";
 import { protect } from "../middleware/auth.middleware";
 import bcrypt from "bcryptjs"; 
 
-// ✨ Zero-Error Import: TypeScript errors ko fix karne ke liye require use kiya
-const Brevo = require("@getbrevo/brevo");
+// ✨ TypeScript aur Render ke errors hatane ke liye require use kiya gaya hai
+const SibApiV3Sdk = require('@getbrevo/brevo');
 
 const router = Router();
 
-// ✨ Brevo Configuration: stable initialization method
-const apiInstance = new Brevo.TransactionalEmailsApi();
-apiInstance.setApiKey(0, process.env.BREVO_API_KEY || ""); 
+// ✨ Brevo Configuration (New Stable Method)
+let apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+let apiKey = SibApiV3Sdk.ApiClient.instance.authentications['api-key'];
+apiKey.apiKey = process.env.BREVO_API_KEY || ""; 
 
 // Temporary storage for registration OTPs
 const otpStore: { [key: string]: { otp: string, expires: number } } = {};
 
 // 📧 Helper: Send Mail using Brevo
 const sendEmailOTP = async (email: string, otp: string, subject: string) => {
-  const sendSmtpEmail = {
-    subject: subject,
-    htmlContent: `<html><body><p>Aapka KisanX verification code hai: <strong>${otp}</strong>. Ye 10 minutes ke liye valid hai.</p></body></html>`,
-    sender: { name: "KisanX Support", email: "saniya122400@gmail.com" },
-    to: [{ email: email }]
-  };
+  const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+
+  sendSmtpEmail.subject = subject;
+  sendSmtpEmail.htmlContent = `<html><body><p>Aapka KisanX verification code hai: <strong>${otp}</strong>. Ye 10 minutes ke liye valid hai.</p></body></html>`;
+  sendSmtpEmail.sender = { name: "KisanX Support", email: "saniya122400@gmail.com" };
+  sendSmtpEmail.to = [{ email: email }];
 
   try {
     await apiInstance.sendTransacEmail(sendSmtpEmail);
