@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document, Query } from "mongoose";
 import bcrypt from "bcryptjs";
-import Product from "./Product"; //
+import Product from "./Product";
 
 /* ================= USER INTERFACE ================= */
 
@@ -13,8 +13,8 @@ export interface IUser extends Document {
   password: string;
   role: "customer" | "farmer";
   profilePic?: string;
-  farmName?: string; 
-  location?: string; 
+  farmName?: string;
+  location?: string;
   points: number;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
@@ -31,8 +31,8 @@ const userSchema = new Schema<IUser>(
     password: { type: String, required: true, select: false },
     role: { type: String, enum: ["customer", "farmer"], default: "customer" },
     profilePic: { type: String, default: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png" },
-    farmName: { type: String, default: "" }, 
-    location: { type: String, default: "" }, 
+    farmName: { type: String, default: "" },
+    location: { type: String, default: "" },
     points: { type: Number, default: 0 },
   },
   { timestamps: true }
@@ -40,26 +40,26 @@ const userSchema = new Schema<IUser>(
 
 /* ================= MIDDLEWARES ================= */
 
-// ✨ CASCADE DELETE: Fixed typing for 'this' and 'next' on Line 45
+// ✅ CASCADE DELETE: Farmer ke saare products delete karo
 userSchema.pre("findOneAndDelete", async function (this: any, next: any) {
   try {
     const user = await this.model.findOne(this.getQuery());
     if (user && user.role === "farmer") {
-      await Product.deleteMany({ farmerId: user._id }); //
+      await Product.deleteMany({ farmerId: user._id });
       console.log(`🗑️ Deleted all products for farmer: ${user.firstName}`);
     }
-    next(); 
+    next();
   } catch (error: any) {
-    next(error); 
+    next(error);
   }
 });
 
-// ✨ PASSWORD HASH: Fixed typing for 'this' and 'next' on Line 60
+// ✅ PASSWORD HASH FIX: genSalt() pehle, phir hash() — double hashing band
 userSchema.pre("save", async function (this: any, next: any) {
-  if (!this.isModified("password")) return next(); 
+  if (!this.isModified("password")) return next();
   try {
-    const salt = await bcrypt.hash(this.password, 10);
-    this.password = salt;
+    const salt = await bcrypt.genSalt(10);          // ✅ Step 1: salt banao
+    this.password = await bcrypt.hash(this.password, salt); // ✅ Step 2: hash karo
     next();
   } catch (error: any) {
     next(error);

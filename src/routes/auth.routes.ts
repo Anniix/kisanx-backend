@@ -1,10 +1,10 @@
 import { Router, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import User from "../models/User";
-import Order from "../models/Order"; 
+import Order from "../models/Order";
 import Product from "../models/Product";
 import { protect } from "../middleware/auth.middleware";
-import bcrypt from "bcryptjs"; 
+import bcrypt from "bcryptjs";
 
 // ✅ Brevo (sib-api-v3-sdk) import
 const SibApiV3Sdk = require('sib-api-v3-sdk');
@@ -138,20 +138,65 @@ router.post("/verify-registration-otp", async (req: Request, res: Response) => {
   }
 });
 
-// 3️⃣ ROUTE: REGISTER
+// 3️⃣ ROUTE: REGISTER ✅ FIXED
 router.post("/register", async (req: Request, res: Response) => {
   try {
     const { firstName, lastName, email, password, phone, role, address, farmName, location, isVerified } = req.body;
-    if (!isVerified) return res.status(400).json({ message: "Please verify your email first" });
 
+    // ✅ FIX 1: Required fields check
+    if (!firstName || !lastName || !email || !password) {
+      return res.status(400).json({ message: "firstName, lastName, email aur password zaroori hain" });
+    }
+
+    if (!isVerified) {
+      return res.status(400).json({ message: "Please verify your email first" });
+    }
+
+    // ✅ FIX 2: Duplicate user check
     const userExists = await User.findOne({ email: email.toLowerCase() });
-    if (userExists) return res.status(400).json({ message: "User already exists" });
+    if (userExists) {
+      return res.status(400).json({ message: "Yeh email already registered hai" });
+    }
 
-    const user = await User.create({ firstName, lastName, email: email.toLowerCase(), password, phone, role, address, farmName, location });
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || "secret", { expiresIn: "7d" });
-    res.status(201).json({ token, user: { id: user._id, firstName: user.firstName, role: user.role } });
+    // ✅ FIX 3: Plain password bhejo — User model ka pre-save hook khud hash karega
+    // (Pehle manual bcrypt.hash yahan bhi tha, jo double-hash ka risk tha)
+    const user = await User.create({
+      firstName,
+      lastName,
+      email: email.toLowerCase(),
+      password,   // ✅ Plain password — pre-save hook hash karega
+      phone,
+      role,
+      address,
+      farmName,
+      location,
+    });
+
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET || "secret",
+      { expiresIn: "7d" }
+    );
+
+    res.status(201).json({
+      token,
+      user: { id: user._id, firstName: user.firstName, role: user.role },
+    });
+
   } catch (error: any) {
-    res.status(500).json({ message: "Registration failed" });
+    // ✅ FIX 4: Mongoose validation errors clearly dikhao
+    console.error("❌ Register Error:", error);
+
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors).map((e: any) => e.message).join(", ");
+      return res.status(400).json({ message: `Validation Error: ${messages}` });
+    }
+
+    if (error.code === 11000) {
+      return res.status(400).json({ message: "Yeh email already registered hai (duplicate)" });
+    }
+
+    res.status(500).json({ message: error.message || "Registration failed" });
   }
 });
 
@@ -161,7 +206,11 @@ router.post("/login", async (req: Request, res: Response) => {
   try {
     const user = await User.findOne({ email }).select("+password");
     if (user && (await bcrypt.compare(password, user.password))) {
-      const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || "secret", { expiresIn: "7d" });
+      const token = jwt.sign(
+        { id: user._id, role: user.role },
+        process.env.JWT_SECRET || "secret",
+        { expiresIn: "7d" }
+      );
       res.json({ token, user: { id: user._id, firstName: user.firstName, role: user.role } });
     } else {
       res.status(401).json({ message: "Invalid credentials" });
@@ -173,16 +222,16 @@ router.post("/login", async (req: Request, res: Response) => {
 
 // FORGOT PASSWORD
 router.post("/forgot-password", async (req: Request, res: Response) => {
-  const { contact, method } = req.body; 
+  const { contact, method } = req.body;
   try {
-    const user = await User.findOne({ 
-        $or: [{ email: contact }, { phone: contact }] 
+    const user = await User.findOne({
+      $or: [{ email: contact }, { phone: contact }]
     });
-    
+
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    otpStore[contact] = { otp, expires: Date.now() + 600000 }; 
+    otpStore[contact] = { otp, expires: Date.now() + 600000 };
 
     if (method === "email") {
       await sendEmailOTP(contact, otp, "KisanX Password Reset OTP");
@@ -208,10 +257,10 @@ router.post("/reset-password", async (req: Request, res: Response) => {
   try {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
-    
+
     await User.findOneAndUpdate(
-        { $or: [{ email: contact }, { phone: contact }] }, 
-        { password: hashedPassword }
+      { $or: [{ email: contact }, { phone: contact }] },
+      { password: hashedPassword }
     );
 
     delete otpStore[contact];
@@ -232,22 +281,21 @@ router.get("/me", protect, async (req: any, res: Response) => {
     if (user.role === "farmer") {
       const farmerProducts = await Product.find({ farmerId: req.user.id });
       const productIds = farmerProducts.map(p => p._id);
-      
-      salesOrOrdersCount = await Order.countDocuments({ 
+      salesOrOrdersCount = await Order.countDocuments({
         "items.productId": { $in: productIds },
-        orderStatus: "Delivered" 
+        orderStatus: "Delivered"
       });
     } else {
-      salesOrOrdersCount = await Order.countDocuments({ 
-        userId: req.user.id, 
-        orderStatus: { $ne: "Cancelled" } 
+      salesOrOrdersCount = await Order.countDocuments({
+        userId: req.user.id,
+        orderStatus: { $ne: "Cancelled" }
       });
     }
 
-    res.json({ 
-      ...user.toObject(), 
-      orderCount: salesOrOrdersCount, 
-      points: user.points || 0 
+    res.json({
+      ...user.toObject(),
+      orderCount: salesOrOrdersCount,
+      points: user.points || 0
     });
   } catch (error) {
     res.status(500).json({ message: "Error fetching profile" });
@@ -270,7 +318,6 @@ router.delete("/delete-user/:id", protect, async (req: any, res: Response) => {
     if (req.user.id !== userIdToDelete) {
       return res.status(403).json({ message: "Access denied. You can only delete your own account." });
     }
-
     await User.findByIdAndDelete(userIdToDelete);
     res.json({ message: "User account deleted successfully" });
   } catch (error) {
