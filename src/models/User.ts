@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Query } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
 import bcrypt from "bcryptjs";
 import Product from "./Product";
 
@@ -41,29 +41,23 @@ const userSchema = new Schema<IUser>(
 /* ================= MIDDLEWARES ================= */
 
 // ✅ CASCADE DELETE: Farmer ke saare products delete karo
-userSchema.pre("findOneAndDelete", async function (this: any, next: any) {
+userSchema.pre("findOneAndDelete", async function (this: any) {
   try {
     const user = await this.model.findOne(this.getQuery());
     if (user && user.role === "farmer") {
       await Product.deleteMany({ farmerId: user._id });
       console.log(`🗑️ Deleted all products for farmer: ${user.firstName}`);
     }
-    next();
-  } catch (error: any) {
-    next(error);
+  } catch (error) {
+    console.error("Cascade delete error:", error);
   }
 });
 
-// ✅ PASSWORD HASH FIX: genSalt() pehle, phir hash() — double hashing band
-userSchema.pre("save", async function (this: any, next: any) {
-  if (!this.isModified("password")) return next();
-  try {
-    const salt = await bcrypt.genSalt(10);          // ✅ Step 1: salt banao
-    this.password = await bcrypt.hash(this.password, salt); // ✅ Step 2: hash karo
-    next();
-  } catch (error: any) {
-    next(error);
-  }
+// ✅ PASSWORD HASH: next() hataya, sirf async use karo
+userSchema.pre("save", async function (this: any) {
+  if (!this.isModified("password")) return;
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
 });
 
 /* ================= METHODS ================= */
