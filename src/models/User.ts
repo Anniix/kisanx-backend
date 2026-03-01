@@ -16,6 +16,7 @@ export interface IUser extends Document {
   farmName?: string;
   location?: string;
   points: number;
+  pushToken?: string;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -34,6 +35,7 @@ const userSchema = new Schema<IUser>(
     farmName: { type: String, default: "" },
     location: { type: String, default: "" },
     points: { type: Number, default: 0 },
+    pushToken: { type: String, default: "" },
   },
   { timestamps: true }
 );

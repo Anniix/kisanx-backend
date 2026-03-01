@@ -4,6 +4,7 @@ import Product from "../models/Product";
 import User from "../models/User";
 import { protect, customerOnly } from "../middleware/auth.middleware";
 import { clearCart } from "./cart.routes";
+import { sendPushNotification } from "../utils/notifications";
 
 const router = Router();
 
@@ -61,6 +62,20 @@ router.put("/update-status/:id", protect, async (req: any, res) => {
         }
       }
 
+      if (order) {
+      const customer = await User.findById(order.userId);
+      if (customer?.pushToken) {
+          let title = "📦 Order Update!";
+          let body = `Aapka order #${order.trackingId} ab ${status} ho chuka hai.`;
+          
+          if (status === "Delivered") {
+              title = "🎉 Order Delivered!";
+              body = "Khushkhabri! Aapka fresh saaman pahunch gaya hai. 🍎";
+          }
+          await sendPushNotification(customer.pushToken, title, body);
+      }
+    }
+
       // 2️⃣ Customer ko points — jo yeh order place kiya tha
       await User.findByIdAndUpdate(order.userId, { $inc: { points: 10 } });
     }
@@ -111,6 +126,18 @@ router.post("/checkout", protect, customerOnly, async (req: any, res) => {
       if (product.quantity < weightInKg) {
         return res.status(400).json({ success: false, message: `Insufficient stock for: ${product.name}` });
       }
+    }
+
+    for (const item of items) {
+        const product = await Product.findById(item._id).populate("farmerId");
+        const farmer: any = product?.farmerId;
+        if (farmer?.pushToken) {
+            await sendPushNotification(
+                farmer.pushToken, 
+                "🎉 Naya Order Aaya!", 
+                `Balle Balle! Aapke ${product?.name} ka naya order aaya hai. 🌾`
+            );
+        }
     }
 
     const newOrder = await Order.create({
