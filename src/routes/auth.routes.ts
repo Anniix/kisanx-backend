@@ -202,10 +202,16 @@ router.post("/register", async (req: Request, res: Response) => {
 
 // LOGIN
 router.post("/login", async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  const { email, password, pushToken } = req.body; // ✅ pushToken add kiya
   try {
     const user = await User.findOne({ email }).select("+password");
     if (user && (await bcrypt.compare(password, user.password))) {
+      
+      // ✅ pushToken save karo agar mila toh
+      if (pushToken) {
+        await User.findByIdAndUpdate(user._id, { pushToken });
+      }
+
       const token = jwt.sign(
         { id: user._id, role: user.role },
         process.env.JWT_SECRET || "secret",
