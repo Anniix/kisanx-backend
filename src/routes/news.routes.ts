@@ -9,8 +9,7 @@ const router = Router();
 const fetchLiveNews = async () => {
   try {
     const API_KEY = process.env.NEWS_API_KEY; 
-    const url = `https://newsapi.org/v2/everything?q=agriculture+India+farming&language=hi&sortBy=publishedAt&apiKey=${API_KEY}`;
-    
+    const url = `https://newsapi.org/v2/everything?q=agriculture+India+farming&language=en&sortBy=publishedAt&pageSize=10&apiKey=${API_KEY}`;
     // ✨ FIX: AxiosResponse type add kiya gaya hai
     const res: AxiosResponse = await axios.get(url);
     
