@@ -12,6 +12,7 @@ import cartRoutes from "./routes/cart.routes";
 import orderRoutes from "./routes/order.routes";
 import marketRoutes from "./routes/market.routes";
 import chatRoutes from "./routes/chat.routes";
+import newsRoutes from "./routes/news.routes";
 
 connectDB();
 
@@ -32,6 +33,7 @@ app.use("/cart", cartRoutes);
 app.use("/orders", orderRoutes);
 app.use("/market", marketRoutes);
 app.use("/chat", chatRoutes);
+app.use("/news", newsRoutes);
 
 app.get("/", (_req, res) => {
   res.send("KisanX API running 🚀");
