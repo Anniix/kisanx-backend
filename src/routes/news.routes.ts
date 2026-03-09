@@ -165,7 +165,7 @@ news: [
       id: "n4",
       title: "Solar Power Update: Kisanon ko milegi Muft Bijli",
       content: "Budget mein ₹20,000 crore solar projects ke liye diye gaye hain, taaki kisanon ko din mein muft aur bharosemand bijli mil sake.",
-      image: "https://images.unsplash.com/photo-1509391366360-fe5bb658582f?w=400",
+      image: "https://www.google.com/imgres?q=solar%20power%20update%20for%20kisan&imgurl=https%3A%2F%2Faustralianpremiumsolar.co.in%2Fwp-content%2Fuploads%2F2025%2F07%2Fjuly-blog-img-10-1-1.jpg&imgrefurl=https%3A%2F%2Faustralianpremiumsolar.co.in%2Fsolar-boost-for-indian-farmers%2F&docid=lT-lpE9LDHNyoM&tbnid=RXT7dMu5RmIy2M&vet=12ahUKEwjr053akpOTAxXV1TQHHRknAPwQnPAOegQIGBAB..i&w=2000&h=1340&hcb=2&ved=2ahUKEwjr053akpOTAxXV1TQHHRknAPwQnPAOegQIGBAB",
       source: "ET News",
       date: "07 March 2026",
       url: "https://m.economictimes.com/news/india/maharashtra-budget-2026-fadnavis-announces-crop-loan-waiver-up-to-rs-2-lakh-for-farmers-mukhyamantri-majhi-ladki-bahin-yojana/articleshow/129145958.cms"
@@ -210,7 +210,7 @@ news: [
       id: "n9",
       title: "Mausam Update: West India mein 'Above Normal' barish ki sambhavna",
       content: "IMD ne forecast kiya hai ki Vidarbha aur Konkan region mein is saal monsoon samanya se behtar rahega.",
-      image: "https://images.unsplash.com/photo-1514632595863-60838b44744b?w=400",
+      image: "https://www.google.com/imgres?q=mausam%20update%20for%20kisan%20west%20bengal&imgurl=https%3A%2F%2Fwww.prabhatkhabar.com%2F_next%2Fimage%3Furl%3Dhttps%253A%252F%252Fwpmedia.prabhatkhabar.com%252Fuploads%252F2026%252F02%252FWeather-Forecast-West-Bengal-Ka-Mausam.jpg%26w%3D3840%26q%3D75&imgrefurl=https%3A%2F%2Fwww.prabhatkhabar.com%2Fstate%2Fwest-bengal%2Fkolkata%2Fweather-forecast-15-february-2026-temprature-fog-bengal-ka-mausam&docid=yvv3m4DKkSstgM&tbnid=ypfOZdgpP5niQM&vet=12ahUKEwjCwqKAk5OTAxVvsFYBHXFWE_0QnPAOegQIGBAB..i&w=1200&h=800&hcb=2&ved=2ahUKEwjCwqKAk5OTAxVvsFYBHXFWE_0QnPAOegQIGBAB",
       source: "Weather Dept",
       date: "08 March 2026",
       url: "https://mausam.imd.gov.in/"
@@ -237,7 +237,7 @@ news: [
       id: "n12",
       title: "AgriStack: Naya 'Farmer ID' bana anivarya",
       content: "Sabhi sarkari yojnaon ka labh lene ke liye kisanon ko AgriStack portal par apni unique Farmer ID register karani hogi.",
-      image: "https://images.unsplash.com/photo-1454165833467-13524899616d?w=400",
+      image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRv4WxfdWjXZrM104h_SbFKfFXpxa5r-OffeA&s",
       source: "PIB India",
       date: "06 March 2026",
       url: "https://pib.gov.in"
