@@ -1,74 +1,38 @@
 import { Router, Request, Response } from "express";
-import axios, { AxiosResponse } from "axios";
-import * as cheerio from "cheerio";
 import { protect, farmerOnly } from "../middleware/auth.middleware";
 
 const router = Router();
 
-// 📰 1. Real-Time News Fetcher
-const fetchLiveNews = async () => {
-  try {
-    const API_KEY = process.env.NEWS_API_KEY; 
-    const url = `https://newsapi.org/v2/everything?q=agriculture+India+farming&language=en&sortBy=publishedAt&pageSize=10&apiKey=${API_KEY}`;
-    // ✨ FIX: AxiosResponse type add kiya gaya hai
-    const res: AxiosResponse = await axios.get(url);
-    
-    // NewsAPI ke structure ke mutabik articles map karein
-    return res.data.articles.map((a: any, index: number) => ({
-      id: `news-${index}`,
-      title: a.title,
-      summary: a.description,
-      content: a.content || a.description,
-      image: a.urlToImage || "https://via.placeholder.com/400",
-      source: a.source.name,
-      date: new Date(a.publishedAt).toLocaleDateString(),
-      url: a.url
-    }));
-  } catch (error) {
-    console.error("News API Error:", error);
-    return [];
-  }
+const STATIC_DATA = {
+  mandi: [
+    { id: "m1", crop: "Wheat (गहू)", market: "Mumbai APMC", price: "₹2,900 - ₹5,000", unit: "Quintal", date: "09 March 2026" },
+    { id: "m2", crop: "Rice (तांदूळ)", market: "Mumbai APMC", price: "₹6,000 - ₹10,200", unit: "Quintal", date: "09 March 2026" },
+    { id: "m3", crop: "Soybean (सोयाबीन)", market: "Latur", price: "₹5,241 - ₹5,345", unit: "Quintal", date: "09 March 2026" },
+    { id: "m4", crop: "Tur (तूर - Red)", market: "Akola", price: "₹7,000 - ₹8,175", unit: "Quintal", date: "09 March 2026" },
+    { id: "m5", crop: "Onion (कांदा)", market: "Pune (Pimpri)", price: "₹1,100 - ₹1,600", unit: "Quintal", date: "09 March 2026" },
+    { id: "m6", crop: "Cotton (कापूस)", market: "Akola", price: "₹25,700 - ₹25,900", unit: "29mm Bale", date: "09 March 2026" }
+  ],
+  schemes: [
+    { id: "s1", title: "Punyashlok Ahilyadevi Holkar Karjmafi (₹2 Lakh Loan Waiver)", link: "https://krishi.maharashtra.gov.in/", badge: "Maharashtra Special" },
+    { id: "s2", title: "PM-Kisan Samman Nidhi (₹6000 Yearly)", link: "https://pmkisan.gov.in/", badge: "Central Govt" },
+    { id: "s3", title: "Free Electricity for Pumps (Up to 7.5 HP)", link: "https://www.mahadiscom.in/", badge: "New Policy" },
+    { id: "s4", title: "Pradhan Mantri Fasal Bima Yojana (Crop Insurance)", link: "https://pmfby.gov.in/", badge: "Insurance" }
+  ],
+  news: [
+    {
+      id: "n1",
+      title: "Maharashtra Budget 2026: ₹2 Lakh farm loan waiver announced",
+      content: "Chief Minister announced a major relief package including a crop loan waiver up to ₹2 lakh and a ₹20,000 crore electricity bill waiver for pump users to support rural Maharashtra.",
+      image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=400",
+      source: "KisanX News",
+      date: "09 March 2026",
+      url: "https://krishi.maharashtra.gov.in/"
+    }
+  ]
 };
 
-// 🏛️ 2. Web Scraper for Schemes
-const scrapeSchemes = async () => {
-  try {
-    // ✨ FIX: AxiosResponse type yahan bhi add kiya gaya hai
-    const response: AxiosResponse = await axios.get("https://agricoop.nic.in/en/major-schemes");
-    const html = response.data;
-    const $ = cheerio.load(html);
-    const schemes: any[] = [];
-
-    $("table tr").each((i, el) => {
-      const title = $(el).find("td").eq(1).text().trim();
-      const link = $(el).find("a").attr("href");
-      
-      if (title && title.length > 5) {
-        schemes.push({
-          id: `scheme-${i}`,
-          title: title,
-          details: "Click to view official government notification.",
-          link: link?.startsWith("http") ? link : `https://agricoop.nic.in${link}`,
-          badge: "Govt Scheme"
-        });
-      }
-    });
-    return schemes.slice(0, 10);
-  } catch (error) {
-    console.error("Scraping Error:", error);
-    return [{ id: "s1", title: "PM-Kisan Scheme", details: "Check official portal for updates.", link: "https://pmkisan.gov.in/", badge: "Manual Update" }];
-  }
-};
-
-// 🚀 Main Route
-// ✨ FIX: Request aur Response types add kiye gaye hain
 router.get("/", protect, farmerOnly, async (req: Request, res: Response) => {
-  try {
-    const [news, schemes] = await Promise.all([fetchLiveNews(), scrapeSchemes()]);
-    res.json({ news, schemes });
-  } catch (error) {
-    res.status(500).json({ message: "Failed to fetch data" });
-  }
+  res.json(STATIC_DATA);
 });
 
 export default router;
